@@ -4,8 +4,8 @@
 
 #include "cpu.h"
 
-CPU::CPU(RAM& mem)
-	: ram(mem)
+CPU::CPU(Bus& bus)
+	: bus(bus)
 {
 }
 
@@ -18,7 +18,7 @@ void CPU::Run()
 
 uint8_t CPU::FetchOpcode()
 {
-	return ram.ReadByte(PC++);
+	return bus.CPURead(PC++);
 }
 
 void CPU::SetOperand(AddressingMode address_mode)
@@ -29,17 +29,17 @@ void CPU::SetOperand(AddressingMode address_mode)
 		operand = UINT32_MAX;
 		return;
 	case AddressingMode::ABS:
-		operand = ram.ReadWord(PC);
+		operand = ReadWord(PC);
 		PC += 2;
 		break;
 	case AddressingMode::ABX:
-		operand = ram.ReadWord(PC);
+		operand = ReadWord(PC);
 		page_cross = ((operand & 0xFF00) != ((operand + X) & 0xFF00));
 		operand += X;
 		PC += 2;
 		break;
 	case AddressingMode::ABY:
-		operand = ram.ReadWord(PC);
+		operand = ReadWord(PC);
 		page_cross = ((operand & 0xFF00) != ((operand + Y) & 0xFF00));
 		operand += Y;
 		PC += 2;
@@ -52,40 +52,40 @@ void CPU::SetOperand(AddressingMode address_mode)
 		break;
 	case AddressingMode::IND:
 		// Implementation of JMP indirect hardware bug (when indirect vector falls on a page boundary)
-		operand = ram.ReadWord(PC);
+		operand = ReadWord(PC);
 		if ((operand & 0x00FF) == 0x00FF)
-			operand = (static_cast<uint16_t>(ram.ReadByte(operand & 0xFF00)) << 8) | static_cast<uint16_t>(ram.ReadByte(operand));
+			operand = (static_cast<uint16_t>(bus.CPURead(operand & 0xFF00)) << 8) | static_cast<uint16_t>(bus.CPURead(operand));
 		else
-			operand = ram.ReadWord(operand);
+			operand = ReadWord(operand);
 		PC += 2;
 		break;
 	case AddressingMode::IDX:
-		operand = ram.ReadByte(PC);
-		operand = (static_cast<uint16_t>(ram.ReadByte((operand + X + 1) & 0xFF)) << 8) | static_cast<uint16_t>(ram.ReadByte((operand + X) & 0xFF));
+		operand = bus.CPURead(PC);
+		operand = (static_cast<uint16_t>(bus.CPURead((operand + X + 1) & 0xFF)) << 8) | static_cast<uint16_t>(bus.CPURead((operand + X) & 0xFF));
 		PC++;
 		break;
 	case AddressingMode::IDY:
-		operand = ram.ReadByte(PC);
-		operand = (static_cast<uint16_t>(ram.ReadByte((operand + 1) & 0xFF)) << 8) | static_cast<uint16_t>(ram.ReadByte(operand));
+		operand = bus.CPURead(PC);
+		operand = (static_cast<uint16_t>(bus.CPURead((operand + 1) & 0xFF)) << 8) | static_cast<uint16_t>(bus.CPURead(operand));
 		page_cross = ((operand & 0xFF00) != ((operand + Y) & 0xFF00));
 		operand += Y;
 		PC++;
 		break;
 	case AddressingMode::REL:
-		page_cross = (((PC + 1) & 0xFF00) != (((PC + 1) + static_cast<int8_t>(ram.ReadByte(PC))) & 0xFF00));
+		page_cross = (((PC + 1) & 0xFF00) != (((PC + 1) + static_cast<int8_t>(bus.CPURead(PC))) & 0xFF00));
 		operand = PC;
 		PC++;
 		break;
 	case AddressingMode::ZPG:
-		operand = ram.ReadByte(PC);
+		operand = bus.CPURead(PC);
 		PC++;
 		break;
 	case AddressingMode::ZPX:
-		operand = (ram.ReadByte(PC) + X) & 0xFF;
+		operand = (bus.CPURead(PC) + X) & 0xFF;
 		PC++;
 		break;
 	case AddressingMode::ZPY:
-		operand = (ram.ReadByte(PC) + Y) & 0xFF;
+		operand = (bus.CPURead(PC) + Y) & 0xFF;
 		PC++;
 		break;
 	default:
@@ -197,11 +197,11 @@ unsigned CPU::BPL()
 unsigned CPU::BRK()
 {
 	SP--;
-	ram.WriteWord(0x100 + SP, PC);
+	WriteWord(0x100 + SP, PC);
 	SP--;
-	ram.WriteByte(0x100 + SP, SR | 0x30);
+	bus.CPUWrite(0x100 + SP, SR | 0x30);
 	SP--;
-	PC = ram.ReadWord(0xFFFE);
+	PC = ReadWord(0xFFFE);
 	SetSRFlag(SRFlag::I, true);
 	return 0;
 }
@@ -344,7 +344,7 @@ unsigned CPU::JMP()
 unsigned CPU::JSR()
 {
 	SP--;
-	ram.WriteWord(0x100 + SP, PC - 1);
+	WriteWord(0x100 + SP, PC - 1);
 	SP--;
 	PC = operand;
 	return 0;
@@ -400,14 +400,14 @@ unsigned CPU::ORA()
 
 unsigned CPU::PHA()
 {
-	ram.WriteByte(0x100 + SP, A);
+	bus.CPUWrite(0x100 + SP, A);
 	SP--;
 	return 0;
 }
 
 unsigned CPU::PHP()
 {
-	ram.WriteByte(0x100 + SP, SR | 0x30);
+	bus.CPUWrite(0x100 + SP, SR | 0x30);
 	SP--;
 	return 0;
 }
@@ -415,7 +415,7 @@ unsigned CPU::PHP()
 unsigned CPU::PLA()
 {
 	SP++;
-	A = ram.ReadByte(0x100 + SP);
+	A = bus.CPURead(0x100 + SP);
 	SetSRFlag(SRFlag::Z, !A);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return 0;
@@ -424,7 +424,7 @@ unsigned CPU::PLA()
 unsigned CPU::PLP()
 {
 	SP++;
-	SR = ram.ReadByte(0x100 + SP);
+	SR = bus.CPURead(0x100 + SP);
 	SetSRFlag(SRFlag::U, true);
 	SetSRFlag(SRFlag::B, false);
 	return 0;
@@ -461,9 +461,9 @@ unsigned CPU::ROR()
 unsigned CPU::RTI()
 {
 	SP++;
-	SR = ram.ReadByte(0x100 + SP);
+	SR = bus.CPURead(0x100 + SP);
 	SP++;
-	PC = ram.ReadWord(0x100 + SP);
+	PC = ReadWord(0x100 + SP);
 	SP++;
 	SetSRFlag(SRFlag::U, true);
 	SetSRFlag(SRFlag::B, false);
@@ -473,7 +473,7 @@ unsigned CPU::RTI()
 unsigned CPU::RTS()
 {
 	SP++;
-	PC = ram.ReadWord(0x100 + SP) + 1;
+	PC = ReadWord(0x100 + SP) + 1;
 	SP++;
 	return 0;
 }

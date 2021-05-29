@@ -4,12 +4,12 @@
 #include <string>
 #include <vector>
 
-#include "ram.h"
+#include "bus.h"
 
 class CPU
 {
 public:
-	CPU(RAM& mem);
+	CPU(Bus& bus);
 
 	void Run();
 
@@ -70,13 +70,24 @@ private:
 	inline void SetSRFlag(SRFlag flag, bool bit)	{ SR = bit ? (SR | static_cast<uint8_t>(flag)) : (SR & ~(static_cast<uint8_t>(flag))); }
 	inline bool IsSet(SRFlag flag)					{ return (SR & static_cast<uint8_t>(flag)); }
 
-	inline uint8_t GetOperandData()					{ return (operand <= 0xFFFF) ? ram.ReadByte(operand) : A; }
+	inline uint8_t GetOperandData()					{ return (operand <= 0xFFFF) ? bus.CPURead(operand) : A; }
 	inline void SetOperandData(uint8_t data)
 	{
 		if (operand <= 0xFFFF)
-			ram.WriteByte(operand, data);
+			bus.CPUWrite(operand, data);
 		else
 			A = data;
+	}
+
+	inline uint16_t ReadWord(uint16_t address)
+	{
+		return (static_cast<uint16_t>(bus.CPURead(address + 1)) << 8) | static_cast<uint16_t>(bus.CPURead(address));
+	}
+
+	inline void WriteWord(uint16_t address, uint16_t value)
+	{
+		bus.CPUWrite(address, value & 0x00FF);
+		bus.CPUWrite(address + 1, value >> 8);
 	}
 
 	uint8_t FetchOpcode();
@@ -92,7 +103,7 @@ private:
 	uint8_t SP = 0xFD;			// Stack Pointer
 	uint8_t SR = 0x24;			// Status Register (NV-BDIZC)
 
-	RAM& ram;
+	Bus& bus;
 
 	unsigned cycles = 0;
 	uint32_t operand = UINT32_MAX;
