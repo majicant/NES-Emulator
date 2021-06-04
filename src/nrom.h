@@ -12,7 +12,4 @@ public:
 
 	uint16_t MapCPURead(uint16_t address);
 	uint16_t MapCPUWrite(uint16_t address);
-
-private:
-	uint8_t mirror;
 };
