@@ -15,6 +15,11 @@ public:
 	uint8_t CPURead(uint16_t address);
 	void CPUWrite(uint16_t address, uint8_t value);
 
+	uint8_t PPURead(uint16_t address);
+	void PPUWrite(uint16_t address, uint8_t value);
+
+	Mapper* GetMapper();
+
 private:
 	std::unique_ptr<Mapper> mapper;
 

@@ -1,9 +1,6 @@
 #include <array>
-#include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <memory>
-#include <string>
 
 #include "cartridge.h"
 #include "nrom.h"
@@ -45,4 +42,19 @@ uint8_t Cartridge::CPURead(uint16_t address)
 void Cartridge::CPUWrite(uint16_t address, uint8_t value)
 {
 	prg_data[mapper->MapCPUWrite(address)] = value;
+}
+
+uint8_t Cartridge::PPURead(uint16_t address)
+{
+	return chr_data[address];
+}
+
+void Cartridge::PPUWrite(uint16_t address, uint8_t value)
+{
+	chr_data[address] = value;
+}
+
+Mapper* Cartridge::GetMapper()
+{
+	return mapper.get();
 }
