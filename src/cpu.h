@@ -11,7 +11,7 @@ class CPU
 public:
 	CPU(Bus& bus);
 
-	void Run();
+	unsigned ExecuteInstruction(bool handle_nmi);
 
 private:
 	enum class AddressingMode
@@ -42,6 +42,8 @@ private:
 		Z = (1 << 1),	// Zero
 		C = (1 << 0)	// Carry
 	};
+
+	unsigned NMI();
 
 	unsigned ADC(); unsigned AND(); unsigned ASL(); unsigned BCC();
 	unsigned BCS(); unsigned BEQ(); unsigned BIT(); unsigned BMI();
@@ -90,22 +92,22 @@ private:
 		bus.CPUWrite(address + 1, value >> 8);
 	}
 
-	uint8_t FetchOpcode();
+	inline uint8_t FetchOpcode() { return bus.CPURead(PC++); }
+
 	void SetOperand(AddressingMode address_mode);
-	void ExecuteInstruction();
 
 	static const std::vector<Instruction> instruction_table;
+
+	Bus& bus;
 
 	uint8_t A = 0x00;			// Accumulator
 	uint8_t X = 0x00;			// X Register
 	uint8_t Y = 0x00;			// Y Register
-	uint16_t PC = 0xC000;		// Program Counter
+	uint16_t PC;				// Program Counter
 	uint8_t SP = 0xFD;			// Stack Pointer
 	uint8_t SR = 0x24;			// Status Register (NV-BDIZC)
 
-	Bus& bus;
-
-	unsigned cycles = 0;
+	unsigned total_cycles = 7;
 	uint32_t operand = UINT32_MAX;
 	bool page_cross = false;
 };

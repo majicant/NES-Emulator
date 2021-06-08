@@ -5,19 +5,19 @@
 
 CPU::CPU(Bus& bus)
 	: bus(bus)
+	, PC(ReadWord(0xFFFC))
 {
 }
 
-void CPU::Run()
+unsigned CPU::ExecuteInstruction(bool handle_nmi)
 {
-	while (true) {
-		ExecuteInstruction();
-	}
-}
-
-uint8_t CPU::FetchOpcode()
-{
-	return bus.CPURead(PC++);
+	if (handle_nmi)
+		return NMI();
+	uint8_t opcode = FetchOpcode();
+	SetOperand(instruction_table[opcode].address_mode);
+	unsigned cycles = (this->*instruction_table[opcode].instruction)() + instruction_table[opcode].cycles;
+	total_cycles += cycles;
+	return cycles;
 }
 
 void CPU::SetOperand(AddressingMode address_mode)
@@ -94,11 +94,16 @@ void CPU::SetOperand(AddressingMode address_mode)
 	operand &= 0xFFFF;
 }
 
-void CPU::ExecuteInstruction()
+unsigned CPU::NMI()
 {
-	uint8_t opcode = FetchOpcode();
-	SetOperand(instruction_table[opcode].address_mode);
-	cycles += (this->*instruction_table[opcode].instruction)() + instruction_table[opcode].cycles;
+	SP--;
+	WriteWord(0x100 + SP, PC);
+	SP--;
+	bus.CPUWrite(0x100 + SP, (SR | 0x20) & 0xEF);
+	SP--;
+	PC = ReadWord(0xFFFA);
+	SetSRFlag(SRFlag::I, true);
+	return 7;
 }
 
 unsigned CPU::ADC()
