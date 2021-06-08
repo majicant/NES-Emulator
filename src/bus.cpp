@@ -1,4 +1,5 @@
 #include "bus.h"
+#include "ppu.h"
 
 Bus::Bus(Cartridge& cart)
 	: cartridge(cart)
@@ -12,15 +13,19 @@ uint8_t Bus::CPURead(uint16_t address)
 {
 	if (address >= 0x0000 && address <= 0x1FFF)
 		return ram[address & 0x07FF];
+	else if (address >= 0x2000 && address <= 0x3FFF)
+		return ppu->Read(address & 0x0007);
 	else if (address >= 0x8000 && address <= 0xFFFF)
 		return cartridge.CPURead(address);
-	return 0x0000;
+	return 0x00;
 }
 
 void Bus::CPUWrite(uint16_t address, uint8_t value)
 {
 	if (address >= 0x0000 && address <= 0x1FFF)
 		ram[address & 0x07FF] = value;
+	else if (address >= 0x2000 && address <= 0x3FFF)
+		ppu->Write(address & 0x0007, value);
 	else if (address >= 0x8000 && address <= 0xFFFF)
 		cartridge.CPUWrite(address, value);
 }
@@ -45,6 +50,7 @@ uint8_t Bus::PPURead(uint16_t address)
 	}
 	else if (address >= 0x3F00 && address <= 0x3FFF)
 		return palette_ram[address & 0x001F];
+	return 0x00;
 }
 
 void Bus::PPUWrite(uint16_t address, uint8_t value)
@@ -67,4 +73,9 @@ void Bus::PPUWrite(uint16_t address, uint8_t value)
 	}
 	else if (address >= 0x3F00 && address <= 0x3FFF)
 		palette_ram[address & 0x001F] = value;
+}
+
+void Bus::ConnectPPU(PPU* ppu_ptr)
+{
+	ppu = ppu_ptr;
 }

@@ -5,6 +5,8 @@
 
 #include "cartridge.h"
 
+class PPU;
+
 class Bus
 {
 public:
@@ -16,8 +18,11 @@ public:
 	uint8_t PPURead(uint16_t address);
 	void PPUWrite(uint16_t address, uint8_t value);
 
+	void ConnectPPU(PPU* ppu);
+
 private:
 	Cartridge& cartridge;
+	PPU* ppu = nullptr;
 	std::vector<uint8_t> ram;
 
 	std::vector<uint8_t> vram;
