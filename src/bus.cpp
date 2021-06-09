@@ -42,13 +42,17 @@ uint8_t Bus::PPURead(uint16_t address)
 		else {
 			// horizontal (vertical arrangement)
 			address &= 0x0FFF;
-			if (address <= 0x07FF)
-				return vram[address & 0x03FF];
-			else
-				return vram[(address & 0x03FF) + 0x0400];
+			return vram[(address <= 0x07FF) ? (address & 0x03FF) : ((address & 0x03FF) + 0x0400)];
 		}
 	}
 	else if (address >= 0x3F00 && address <= 0x3FFF)
+		switch (address & 0x00FF) {
+		case 0x10:
+		case 0x14:
+		case 0x18:
+		case 0x1C:
+			address -= 0x10;
+		}
 		return palette_ram[address & 0x001F];
 	return 0x00;
 }
@@ -65,14 +69,20 @@ void Bus::PPUWrite(uint16_t address, uint8_t value)
 		else {
 			// horizontal (vertical arrangement)
 			address &= 0x0FFF;
-			if (address <= 0x07FF)
-				vram[address & 0x03FF] = value;
-			else
-				vram[(address & 0x03FF) + 0x0400] = value;
+			vram[(address <= 0x07FF) ? (address & 0x03FF) : ((address & 0x03FF) + 0x0400)] = value;
 		}
 	}
-	else if (address >= 0x3F00 && address <= 0x3FFF)
+	else if (address >= 0x3F00 && address <= 0x3FFF) {
+		switch (address & 0x00FF) {
+		case 0x10:
+		case 0x14:
+		case 0x18:
+		case 0x1C:
+			address -= 0x10;
+			break;
+		}
 		palette_ram[address & 0x001F] = value;
+	}
 }
 
 void Bus::ConnectPPU(PPU* ppu_ptr)
