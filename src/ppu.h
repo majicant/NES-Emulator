@@ -27,6 +27,8 @@ private:
 	void FetchBackground();
 	void DrawNametables();
 
+	static const std::vector<std::vector<uint8_t>> palettes;
+
 	uint8_t PPUCTRL = 0x00;		// $2000
 	uint8_t PPUMASK = 0x00;		// $2001
 	uint8_t PPUSTATUS = 0x00;	// $2002

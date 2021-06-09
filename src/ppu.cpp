@@ -81,16 +81,16 @@ void PPU::Step()
 		// Visible scanlines
 	}
 	else if (scanlines == 241 && cycles == 1) {
+		// Vertical blanking
 		PPUSTATUS |= 0x80;
 		nmi_occured = true;
 		DrawNametables();
-		// Vertical blanking
 	}
 	else if (scanlines == 261 && cycles == 1) {
+		// Pre-render line
 		PPUSTATUS &= 0x7F;
 		nmi_occured = false;
 		scanlines = 0;
-		// Pre-render line
 	}
 
 	cycles++;
@@ -102,21 +102,17 @@ void PPU::Step()
 
 void PPU::FetchBackground()
 {
-	/*if (cycles >= 1 && cycles <= 256) {
-		switch (cycles % 8) {
-		case 1:
-
-		}
-	}*/
 }
 
 void PPU::DrawNametables()
 {
-	uint8_t COLORS[4] = { 0x00, 0x55, 0x90, 0xD5 };
-
 	for (int row = 0; row < 30; row++) {
 		for (int col = 0; col < 32; col++) {
 			uint8_t nt_byte = bus.PPURead(0x2000 + col + row * 32);
+			uint8_t at_byte = bus.PPURead(0x23C0 + (col / 4) + (row / 4) * 8);
+
+			uint8_t shift = ((col % 4 <= 1) ? 0 : 2) + ((row % 4 <= 1) ? 0 : 4);
+			at_byte = ((at_byte >> shift) & 0x03) * 4;
 
 			for (int byte = 0; byte < 8; byte++) {
 				uint16_t addr = ((PPUCTRL & 0x10) ? 0x1000 : 0x0000) + (nt_byte * 16) + byte;
@@ -126,27 +122,12 @@ void PPU::DrawNametables()
 				for (int bit = 0; bit < 8; bit++) {
 					uint8_t pixel = ((pat_byte_low >> (7 - bit)) & 0x01) + (((pat_byte_high >> (7 - bit)) & 0x01) * 2);
 
-					framebuffer[((row * 8 + byte) * 256 * 3) + ((col * 8 + bit) * 3)] = COLORS[pixel];
-					framebuffer[((row * 8 + byte) * 256 * 3) + ((col * 8 + bit) * 3) + 1] = COLORS[pixel];
-					framebuffer[((row * 8 + byte) * 256 * 3) + ((col * 8 + bit) * 3) + 2] = COLORS[pixel];
+					framebuffer[((row * 8 + byte) * 256 * 3) + ((col * 8 + bit) * 3)] = palettes[bus.PPURead(0x3F00 + at_byte + pixel)][0];
+					framebuffer[((row * 8 + byte) * 256 * 3) + ((col * 8 + bit) * 3) + 1] = palettes[bus.PPURead(0x3F00 + at_byte + pixel)][1];
+					framebuffer[((row * 8 + byte) * 256 * 3) + ((col * 8 + bit) * 3) + 2] = palettes[bus.PPURead(0x3F00 + at_byte + pixel)][2];
 				}
 			}
 		}
 	}
-
-	/*for (int r = 0; r < 240; r++) {
-		for (int col = 0; col < 256; col++) {
-			uint16_t tile_nr = bus.PPURead(0x2000 + (r / 8 * 32) + (col / 8));
-			uint16_t tile_attr = bus.PPURead(0x0000);
-
-			uint16_t adr = (PPUCTRL & 0x10) ? 0x1000 : 0x0000;
-			adr += (tile_nr * 0x10) + (r % 8);
-			uint8_t pixel = ((bus.PPURead(adr) >> (7 - (col % 8))) & 1) + (((bus.PPURead(adr + 8) >> (7 - (col % 8))) & 1) * 2);
-
-			framebuffer[(r * 256 * 3) + (col * 3)] = COLORS[pixel];
-			framebuffer[(r * 256 * 3) + (col * 3) + 1] = COLORS[pixel];
-			framebuffer[(r * 256 * 3) + (col * 3) + 2] = COLORS[pixel];
-		}
-	}*/
 	engine->UpdateDisplay(framebuffer.data());
 }
