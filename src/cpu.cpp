@@ -1,6 +1,3 @@
-#include <iostream>
-#include <fstream>
-
 #include "cpu.h"
 
 CPU::CPU(Bus& bus)
@@ -87,9 +84,6 @@ void CPU::SetOperand(AddressingMode address_mode)
 		operand = (bus.CPURead(PC) + Y) & 0xFF;
 		PC++;
 		break;
-	default:
-		std::cerr << "Unknown addressing mode!" << std::endl;
-		break;
 	}
 	operand &= 0xFFFF;
 }
@@ -112,7 +106,7 @@ unsigned CPU::ADC()
 	SetSRFlag(SRFlag::C, result >> 8);
 	SetSRFlag(SRFlag::V, (~(A ^ GetOperandData()) & (A ^ result) & 0x80));
 	A = result & 0x00FF;
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return page_cross ? 1 : 0;
 }
@@ -120,7 +114,7 @@ unsigned CPU::ADC()
 unsigned CPU::AND()
 {
 	A &= GetOperandData();
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return page_cross ? 1 : 0;
 }
@@ -132,7 +126,7 @@ unsigned CPU::ASL()
 	op_data <<= 1;
 	SetSRFlag(SRFlag::N, op_data & 0x80);
 	SetOperandData(op_data);
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	return 0;
 }
 
@@ -165,7 +159,7 @@ unsigned CPU::BEQ()
 
 unsigned CPU::BIT()
 {
-	SetSRFlag(SRFlag::Z, !(A & GetOperandData()));
+	SetSRFlag(SRFlag::Z, (A & GetOperandData()) == 0);
 	SetSRFlag(SRFlag::V, GetOperandData() & 0x40);
 	SetSRFlag(SRFlag::N, GetOperandData() & 0x80);
 	return 0;
@@ -283,7 +277,7 @@ unsigned CPU::DEC()
 {
 	uint8_t op_data = GetOperandData();
 	op_data--;
-	SetSRFlag(SRFlag::Z, !op_data);
+	SetSRFlag(SRFlag::Z, op_data == 0);
 	SetSRFlag(SRFlag::N, op_data & 0x80);
 	SetOperandData(op_data);
 	return 0;
@@ -292,7 +286,7 @@ unsigned CPU::DEC()
 unsigned CPU::DEX()
 {
 	X--;
-	SetSRFlag(SRFlag::Z, !X);
+	SetSRFlag(SRFlag::Z, X == 0);
 	SetSRFlag(SRFlag::N, X & 0x80);
 	return 0;
 }
@@ -300,7 +294,7 @@ unsigned CPU::DEX()
 unsigned CPU::DEY()
 {
 	Y--;
-	SetSRFlag(SRFlag::Z, !Y);
+	SetSRFlag(SRFlag::Z, Y == 0);
 	SetSRFlag(SRFlag::N, Y & 0x80);
 	return 0;
 }
@@ -308,7 +302,7 @@ unsigned CPU::DEY()
 unsigned CPU::EOR()
 {
 	A ^= GetOperandData();
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return page_cross ? 1 : 0;
 }
@@ -317,7 +311,7 @@ unsigned CPU::INC()
 {
 	uint8_t op_data = GetOperandData();
 	op_data++;
-	SetSRFlag(SRFlag::Z, !op_data);
+	SetSRFlag(SRFlag::Z, op_data == 0);
 	SetSRFlag(SRFlag::N, op_data & 0x80);
 	SetOperandData(op_data);
 	return 0;
@@ -326,7 +320,7 @@ unsigned CPU::INC()
 unsigned CPU::INX()
 {
 	X++;
-	SetSRFlag(SRFlag::Z, !X);
+	SetSRFlag(SRFlag::Z, X == 0);
 	SetSRFlag(SRFlag::N, X & 0x80);
 	return 0;
 }
@@ -334,7 +328,7 @@ unsigned CPU::INX()
 unsigned CPU::INY()
 {
 	Y++;
-	SetSRFlag(SRFlag::Z, !Y);
+	SetSRFlag(SRFlag::Z, Y == 0);
 	SetSRFlag(SRFlag::N, Y & 0x80);
 	return 0;
 }
@@ -357,7 +351,7 @@ unsigned CPU::JSR()
 unsigned CPU::LDA()
 {
 	A = GetOperandData();
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return page_cross ? 1 : 0;
 }
@@ -365,7 +359,7 @@ unsigned CPU::LDA()
 unsigned CPU::LDX()
 {
 	X = GetOperandData();
-	SetSRFlag(SRFlag::Z, !X);
+	SetSRFlag(SRFlag::Z, X == 0);
 	SetSRFlag(SRFlag::N, X & 0x80);
 	return page_cross ? 1 : 0;
 }
@@ -373,7 +367,7 @@ unsigned CPU::LDX()
 unsigned CPU::LDY()
 {
 	Y = GetOperandData();
-	SetSRFlag(SRFlag::Z, !Y);
+	SetSRFlag(SRFlag::Z, Y == 0);
 	SetSRFlag(SRFlag::N, Y & 0x80);
 	return page_cross ? 1 : 0;
 }
@@ -383,7 +377,7 @@ unsigned CPU::LSR()
 	uint8_t op_data = GetOperandData();
 	SetSRFlag(SRFlag::C, op_data & 0x01);
 	op_data >>= 1;
-	SetSRFlag(SRFlag::Z, !op_data);
+	SetSRFlag(SRFlag::Z, op_data == 0);
 	SetSRFlag(SRFlag::N, false);
 	SetOperandData(op_data);
 	return 0;
@@ -397,7 +391,7 @@ unsigned CPU::NOP()
 unsigned CPU::ORA()
 {
 	A |= GetOperandData();
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return page_cross ? 1 : 0;
 }
@@ -420,7 +414,7 @@ unsigned CPU::PLA()
 {
 	SP++;
 	A = bus.CPURead(0x100 + SP);
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return 0;
 }
@@ -444,7 +438,7 @@ unsigned CPU::ROL()
 	SetSRFlag(SRFlag::C, new_carry);
 	SetSRFlag(SRFlag::N, op_data & 0x80);
 	SetOperandData(op_data);
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	return 0;
 }
 
@@ -458,7 +452,7 @@ unsigned CPU::ROR()
 	SetSRFlag(SRFlag::C, new_carry);
 	SetSRFlag(SRFlag::N, op_data & 0x80);
 	SetOperandData(op_data);
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	return 0;
 }
 
@@ -485,10 +479,10 @@ unsigned CPU::RTS()
 unsigned CPU::SBC()
 {
 	uint16_t result = A + ~GetOperandData() + IsSet(SRFlag::C);
-	SetSRFlag(SRFlag::C, !(result >> 8));
+	SetSRFlag(SRFlag::C, (result >> 8) == 0);
 	SetSRFlag(SRFlag::V, (~(A ^ ~GetOperandData()) & (A ^ result) & 0x80));
 	A = result & 0x00FF;
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return page_cross ? 1 : 0;
 }
@@ -532,7 +526,7 @@ unsigned CPU::STY()
 unsigned CPU::TAX()
 {
 	X = A;
-	SetSRFlag(SRFlag::Z, !X);
+	SetSRFlag(SRFlag::Z, X == 0);
 	SetSRFlag(SRFlag::N, X & 0x80);
 	return 0;
 }
@@ -540,7 +534,7 @@ unsigned CPU::TAX()
 unsigned CPU::TAY()
 {
 	Y = A;
-	SetSRFlag(SRFlag::Z, !Y);
+	SetSRFlag(SRFlag::Z, Y == 0);
 	SetSRFlag(SRFlag::N, Y & 0x80);
 	return 0;
 }
@@ -548,7 +542,7 @@ unsigned CPU::TAY()
 unsigned CPU::TSX()
 {
 	X = SP;
-	SetSRFlag(SRFlag::Z, !X);
+	SetSRFlag(SRFlag::Z, X == 0);
 	SetSRFlag(SRFlag::N, X & 0x80);
 	return 0;
 }
@@ -556,7 +550,7 @@ unsigned CPU::TSX()
 unsigned CPU::TXA()
 {
 	A = X;
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return 0;
 }
@@ -570,7 +564,7 @@ unsigned CPU::TXS()
 unsigned CPU::TYA()
 {
 	A = Y;
-	SetSRFlag(SRFlag::Z, !A);
+	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
 	return 0;
 }
