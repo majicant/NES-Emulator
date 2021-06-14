@@ -221,6 +221,8 @@ void PPU::UpdateFramebuffer()
 	uint8_t pal_hi = (bg_regs.palette_shift[1] & (0x80 >> bg_regs.fine_x)) > 0;
 
 	uint8_t palette = ((pal_hi << 1) | pal_lo) << 2;
+	if (pixel == 0)
+		palette = 0;
 
 	framebuffer[scanlines * 256 * 3 + (cycles - 1) * 3] = palettes[bus.PPURead(0x3F00 + palette + pixel)][0];
 	framebuffer[scanlines * 256 * 3 + ((cycles - 1) * 3) + 1] = palettes[bus.PPURead(0x3F00 + palette + pixel)][1];
