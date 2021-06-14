@@ -13,19 +13,20 @@ public:
 
 	uint8_t Read(uint16_t address);
 	void Write(uint16_t address, uint8_t value);
-
-	inline bool CheckNMI()
-	{
-		bool trigger_nmi = (nmi_output && nmi_occured);
-		nmi_occured = false;
-		return trigger_nmi;
-	}
+	bool CheckNMI();
 
 	void Step();
 
 private:
 	void FetchBackground();
-	void DrawNametables();
+
+	void IncrementCoarseX();
+	void IncrementY();
+
+	void ShiftRegisters();
+	void LoadRegisters();
+
+	void UpdateFramebuffer();
 
 	static const std::vector<std::vector<uint8_t>> palettes;
 
@@ -44,16 +45,22 @@ private:
 	std::unique_ptr<SDLEngine> engine;
 	std::vector<uint8_t> framebuffer;
 
-	struct BackgroundRegisters
+	struct
 	{
-		uint16_t vram_address = 0x0000;
-		uint16_t temp_address = 0x0000;
+		uint16_t v_addr = 0x0000;
+		uint16_t t_addr = 0x0000;
 		uint8_t fine_x = 0x00;
 		bool first_write = false;
 
+		uint8_t nt_byte = 0x00;
+		uint8_t at_byte = 0x00;
+		uint8_t pt_byte_low = 0x00;
+		uint8_t pt_byte_high = 0x00;
+
 		uint16_t pattern_shift[2] = {};
+		uint8_t palette_latch[2] = {};
 		uint8_t palette_shift[2] = {};
-	} bg_registers;
+	} bg_regs;
 
 	uint8_t internal_data_buffer = 0x00;
 
