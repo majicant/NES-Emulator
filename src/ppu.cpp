@@ -1,12 +1,10 @@
-#include <iostream>
-#include <vector>
-
 #include "ppu.h"
 
 PPU::PPU(Bus& bus)
 	: bus(bus)
 	, engine(std::make_unique<SDLEngine>())
 	, framebuffer(256 * 240 * 3)
+	, oam(256)
 {
 }
 
@@ -20,6 +18,7 @@ uint8_t PPU::Read(uint16_t address)
 		bg_regs.first_write = true;
 		break;
 	case 4:		// OAMDATA
+		data = oam[OAMADDR];
 		break;
 	case 7:		// PPUDATA
 		if (bg_regs.v_addr <= 0x3EFF) {
@@ -31,9 +30,6 @@ uint8_t PPU::Read(uint16_t address)
 			internal_data_buffer = data;
 		}
 		bg_regs.v_addr += (PPUCTRL & 0x04) ? 32 : 1;
-		break;
-	default:
-		std::cerr << "Invalid read address!" << std::endl;
 		break;
 	}
 	return data;
@@ -51,8 +47,10 @@ void PPU::Write(uint16_t address, uint8_t value)
 		PPUMASK = value;
 		break;
 	case 3:		// OAMADDR
+		OAMADDR = value;
 		break;
 	case 4:		// OAMDATA
+		oam[OAMADDR++] = value;
 		break;
 	case 5:		// PPUSCROLL
 		if (bg_regs.first_write) {
@@ -75,9 +73,6 @@ void PPU::Write(uint16_t address, uint8_t value)
 	case 7:		// PPUDATA
 		bus.PPUWrite(bg_regs.v_addr, value);
 		bg_regs.v_addr += (PPUCTRL & 0x04) ? 32 : 1;
-		break;
-	default:
-		std::cerr << "Invalid write address!" << std::endl;
 		break;
 	}
 }

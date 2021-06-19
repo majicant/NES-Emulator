@@ -45,6 +45,8 @@ private:
 	std::unique_ptr<SDLEngine> engine;
 	std::vector<uint8_t> framebuffer;
 
+	std::vector<uint8_t> oam;
+
 	struct
 	{
 		uint16_t v_addr = 0x0000;
