@@ -6,15 +6,16 @@ NES::NES(const std::string& filename)
 	, nes_cpu(std::make_unique<CPU>(*nes_bus))
 	, nes_ppu(std::make_unique<PPU>(*nes_bus))
 {
+	nes_bus->ConnectCPU(nes_cpu.get());
 	nes_bus->ConnectPPU(nes_ppu.get());
 }
 
 void NES::Run()
 {
+	unsigned ppu_cycles;
 	while (true) {
-		unsigned ppu_cycles = nes_cpu->ExecuteInstruction(nes_ppu->CheckNMI());
-		for (unsigned i = 0; i < ppu_cycles; i++) {
+		ppu_cycles = nes_ppu->CheckNMI() ? nes_cpu->HandleNMI() : nes_cpu->CheckOAMDMA() ? nes_cpu->HandleOAMDMA() : nes_cpu->ExecuteInstruction();
+		for (unsigned i = 0; i < ppu_cycles; i++)
 			nes_ppu->Step();
-		}
 	}
 }
