@@ -11,7 +11,12 @@ class CPU
 public:
 	CPU(Bus& bus);
 
-	unsigned ExecuteInstruction(bool handle_nmi);
+	unsigned ExecuteInstruction();
+	unsigned HandleNMI();
+
+	bool CheckOAMDMA();
+	void TriggerOAMDMA(uint8_t page_num);
+	unsigned HandleOAMDMA();
 
 private:
 	enum class AddressingMode
@@ -43,8 +48,6 @@ private:
 		C = (1 << 0)	// Carry
 	};
 
-	unsigned NMI();
-
 	unsigned ADC(); unsigned AND(); unsigned ASL(); unsigned BCC();
 	unsigned BCS(); unsigned BEQ(); unsigned BIT(); unsigned BMI();
 	unsigned BNE(); unsigned BPL(); unsigned BRK(); unsigned BVC();
@@ -69,45 +72,33 @@ private:
 		unsigned cycles;
 	};
 
-	inline void SetSRFlag(SRFlag flag, bool bit)	{ SR = bit ? (SR | static_cast<uint8_t>(flag)) : (SR & ~(static_cast<uint8_t>(flag))); }
-	inline bool IsSet(SRFlag flag)					{ return (SR & static_cast<uint8_t>(flag)); }
-
-	inline uint8_t GetOperandData()					{ return (operand <= 0xFFFF) ? bus.CPURead(operand) : A; }
-	inline void SetOperandData(uint8_t data)
-	{
-		if (operand <= 0xFFFF)
-			bus.CPUWrite(operand, data);
-		else
-			A = data;
-	}
-
-	inline uint16_t ReadWord(uint16_t address)
-	{
-		return (static_cast<uint16_t>(bus.CPURead(address + 1)) << 8) | static_cast<uint16_t>(bus.CPURead(address));
-	}
-
-	inline void WriteWord(uint16_t address, uint16_t value)
-	{
-		bus.CPUWrite(address, value & 0x00FF);
-		bus.CPUWrite(address + 1, value >> 8);
-	}
-
-	inline uint8_t FetchOpcode() { return bus.CPURead(PC++); }
-
+	uint8_t FetchOpcode();
 	void SetOperand(AddressingMode address_mode);
+
+	void SetSRFlag(SRFlag flag, bool bit);
+	bool IsSet(SRFlag flag);
+
+	uint8_t GetOperandData();
+	void SetOperandData(uint8_t data);
+
+	uint16_t ReadWord(uint16_t address);
+	void WriteWord(uint16_t address, uint16_t value);
 
 	static const std::vector<Instruction> instruction_table;
 
 	Bus& bus;
 
-	uint8_t A = 0x00;			// Accumulator
-	uint8_t X = 0x00;			// X Register
-	uint8_t Y = 0x00;			// Y Register
-	uint16_t PC;				// Program Counter
-	uint8_t SP = 0xFD;			// Stack Pointer
-	uint8_t SR = 0x24;			// Status Register (NV-BDIZC)
+	uint8_t A = 0x00;	// Accumulator
+	uint8_t X = 0x00;	// X Register
+	uint8_t Y = 0x00;	// Y Register
+	uint16_t PC;		// Program Counter
+	uint8_t SP = 0xFD;	// Stack Pointer
+	uint8_t SR = 0x24;	// Status Register (NV-BDIZC)
 
-	unsigned total_cycles = 7;
+	unsigned total_cycles = 0;
 	uint32_t operand = UINT32_MAX;
 	bool page_cross = false;
+
+	bool oamdma_enable = false;
+	uint8_t oamdma_page = 0x00;
 };

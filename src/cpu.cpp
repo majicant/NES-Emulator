@@ -6,15 +6,54 @@ CPU::CPU(Bus& bus)
 {
 }
 
-unsigned CPU::ExecuteInstruction(bool handle_nmi)
+unsigned CPU::ExecuteInstruction()
 {
-	if (handle_nmi)
-		return NMI();
 	uint8_t opcode = FetchOpcode();
 	SetOperand(instruction_table[opcode].address_mode);
 	unsigned cycles = (this->*instruction_table[opcode].instruction)() + instruction_table[opcode].cycles;
 	total_cycles += cycles;
 	return cycles;
+}
+
+unsigned CPU::HandleNMI()
+{
+	SP--;
+	WriteWord(0x100 + SP, PC);
+	SP--;
+	bus.CPUWrite(0x100 + SP, (SR | 0x20) & 0xEF);
+	SP--;
+	PC = ReadWord(0xFFFA);
+	SetSRFlag(SRFlag::I, true);
+	total_cycles += 7;
+	return 7;
+}
+
+bool CPU::CheckOAMDMA()
+{
+	return oamdma_enable;
+}
+
+void CPU::TriggerOAMDMA(uint8_t page_num)
+{
+	oamdma_enable = true;
+	oamdma_page = page_num;
+}
+
+unsigned CPU::HandleOAMDMA()
+{
+	unsigned odd_cycle = total_cycles % 2;
+	for (int i = 0; i < 256; i++) {
+		uint8_t data = bus.CPURead((static_cast<uint16_t>(oamdma_page) << 8) + i);
+		bus.CPUWrite(0x2004, data);
+	}
+	oamdma_enable = false;
+	total_cycles += 513 + odd_cycle;
+	return 513 + odd_cycle;
+}
+
+uint8_t CPU::FetchOpcode()
+{
+	return bus.CPURead(PC++);
 }
 
 void CPU::SetOperand(AddressingMode address_mode)
@@ -88,16 +127,38 @@ void CPU::SetOperand(AddressingMode address_mode)
 	operand &= 0xFFFF;
 }
 
-unsigned CPU::NMI()
+void CPU::SetSRFlag(SRFlag flag, bool bit)
 {
-	SP--;
-	WriteWord(0x100 + SP, PC);
-	SP--;
-	bus.CPUWrite(0x100 + SP, (SR | 0x20) & 0xEF);
-	SP--;
-	PC = ReadWord(0xFFFA);
-	SetSRFlag(SRFlag::I, true);
-	return 7;
+	SR = bit ? (SR | static_cast<uint8_t>(flag)) : (SR & ~(static_cast<uint8_t>(flag)));
+}
+
+bool CPU::IsSet(SRFlag flag)
+{
+	return (SR & static_cast<uint8_t>(flag));
+}
+
+uint8_t CPU::GetOperandData()
+{
+	return (operand <= 0xFFFF) ? bus.CPURead(operand) : A;
+}
+
+void CPU::SetOperandData(uint8_t data)
+{
+	if (operand <= 0xFFFF)
+		bus.CPUWrite(operand, data);
+	else
+		A = data;
+}
+
+uint16_t CPU::ReadWord(uint16_t address)
+{
+	return (static_cast<uint16_t>(bus.CPURead(address + 1)) << 8) | static_cast<uint16_t>(bus.CPURead(address));
+}
+
+void CPU::WriteWord(uint16_t address, uint16_t value)
+{
+	bus.CPUWrite(address, value & 0x00FF);
+	bus.CPUWrite(address + 1, value >> 8);
 }
 
 unsigned CPU::ADC()
