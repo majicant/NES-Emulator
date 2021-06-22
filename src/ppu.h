@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <memory>
 
@@ -19,12 +20,14 @@ public:
 
 private:
 	void FetchBackground();
-
 	void IncrementCoarseX();
 	void IncrementY();
+	void ShiftBackgroundRegisters();
+	void LoadBackgroundRegisters();
 
-	void ShiftRegisters();
-	void LoadRegisters();
+	void FetchSprites();
+	void FetchTileData();
+	bool SpriteZeroHitIsPossible();
 
 	void UpdateFramebuffer();
 
@@ -34,20 +37,16 @@ private:
 	uint8_t PPUMASK = 0x00;		// $2001
 	uint8_t PPUSTATUS = 0x00;	// $2002
 	uint8_t OAMADDR = 0x00;		// $2003
-	uint8_t OAMDATA = 0x00;		// $2004
-	uint8_t PPUSCROLL = 0x00;	// $2005
-	uint8_t PPUADDR = 0x00;		// $2006
-	uint8_t PPUDATA = 0x00;		// $2007
-	uint8_t OAMDMA = 0x00;		// $4014
 
 	Bus& bus;
 
 	std::unique_ptr<SDLEngine> engine;
 	std::vector<uint8_t> framebuffer;
 
-	std::vector<uint8_t> oam;
+	std::vector<uint8_t> primary_oam;
+	std::vector<uint8_t> secondary_oam;
 
-	struct
+	struct Background
 	{
 		uint16_t v_addr = 0x0000;
 		uint16_t t_addr = 0x0000;
@@ -59,10 +58,21 @@ private:
 		uint8_t pt_byte_low = 0x00;
 		uint8_t pt_byte_high = 0x00;
 
-		uint16_t pattern_shift[2] = {};
-		uint8_t palette_latch[2] = {};
-		uint8_t palette_shift[2] = {};
+		std::array<uint16_t, 2> pattern_shift = {};
+		std::array<uint8_t, 2> palette_latch = {};
+		std::array<uint8_t, 2> palette_shift = {};
 	} bg_regs;
+
+	struct Sprites
+	{
+		uint8_t sprites_found = 0x00;
+		bool sprite_zero_found = false;
+
+		std::array<uint8_t, 8> pattern_shift_lo = {};
+		std::array<uint8_t, 8> pattern_shift_hi = {};
+		std::array<uint8_t, 8> attribute_latch = {};
+		std::array<uint8_t, 8> x_counters = {};
+	} sprite_regs;
 
 	uint8_t internal_data_buffer = 0x00;
 
