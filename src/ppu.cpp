@@ -233,15 +233,17 @@ void PPU::FetchSprites()
 		std::fill(secondary_oam.begin(), secondary_oam.end(), 0xFF);
 		sprite_regs.sprites_found = 0;
 		sprite_regs.sprite_zero_found = false;
-		for (int n = 0; n < 64 && sprite_regs.sprites_found < 9; n++) {
-			uint8_t y_coordinate = primary_oam[4 * n];
-			if (sprite_regs.sprites_found != 8)
+		for (int n = 0, m = 0; n < 64 && sprite_regs.sprites_found < 9; n++) {
+			uint8_t y_coordinate = primary_oam[4 * n + m];	// m will always be 0 unless we are searching for sprite overflow
+			if (sprite_regs.sprites_found == 8)
+				m = (m + 1) % 4;	// Sprite overflow bug
+			else
 				secondary_oam[sprite_regs.sprites_found * 4] = y_coordinate;
 			bool in_range = ((int16_t)scanlines - (int16_t)y_coordinate) >= 0 && ((int16_t)scanlines - (int16_t)y_coordinate) < ((PPUCTRL & 0x20) ? 16 : 8);
 			if (in_range) {
 				if (n == 0)	// Sprite zero hit
 					sprite_regs.sprite_zero_found = true;
-				if (sprite_regs.sprites_found == 8)	// Sprite overflow (bug is not implemented)
+				if (sprite_regs.sprites_found == 8)	// Sprite overflow has occurred
 					PPUSTATUS |= 0x20;
 				else
 					for (int i = 1; i < 4; i++)
