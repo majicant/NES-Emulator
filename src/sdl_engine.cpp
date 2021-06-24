@@ -21,3 +21,25 @@ void SDLEngine::UpdateDisplay(const uint8_t* framebuffer)
 	SDL_RenderCopy(renderer, texture, nullptr, nullptr);
 	SDL_RenderPresent(renderer);
 }
+
+void SDLEngine::UpdateController(uint8_t& buttons)
+{
+	SDL_PumpEvents();
+	buttons = 0x00;
+	if (keyboard_state[SDL_SCANCODE_L])	// A
+		buttons |= 0x01;
+	if (keyboard_state[SDL_SCANCODE_K])	// B
+		buttons |= 0x02;
+	if (keyboard_state[SDL_SCANCODE_X])	// Select
+		buttons |= 0x04;
+	if (keyboard_state[SDL_SCANCODE_Z])	// Start
+		buttons |= 0x08;
+	if (keyboard_state[SDL_SCANCODE_W])	// Up
+		buttons |= 0x10;
+	if (keyboard_state[SDL_SCANCODE_S])	// Down
+		buttons |= 0x20;
+	if (keyboard_state[SDL_SCANCODE_A])	// Left
+		buttons |= 0x40;
+	if (keyboard_state[SDL_SCANCODE_D])	// Right
+		buttons |= 0x80;
+}
