@@ -2,8 +2,9 @@
 #include "cpu.h"
 #include "ppu.h"
 
-Bus::Bus(Cartridge& cart)
+Bus::Bus(Cartridge& cart, Controller& contr)
 	: cartridge(cart)
+	, controller(contr)
 	, ram(2048)
 	, vram(2048)
 	, palette_ram(32)
@@ -16,6 +17,8 @@ uint8_t Bus::CPURead(uint16_t address)
 		return ram[address & 0x07FF];
 	else if (address >= 0x2000 && address <= 0x3FFF)
 		return bus_ppu->Read(address & 0x0007);
+	else if (address == 0x4016)
+		return controller.Read();
 	else if (address >= 0x8000 && address <= 0xFFFF)
 		return cartridge.CPURead(address);
 	return 0x00;
@@ -29,6 +32,8 @@ void Bus::CPUWrite(uint16_t address, uint8_t value)
 		bus_ppu->Write(address & 0x0007, value);
 	else if (address == 0x4014)
 		bus_cpu->TriggerOAMDMA(value);
+	else if (address == 0x4016)
+		controller.Write();
 	else if (address >= 0x8000 && address <= 0xFFFF)
 		cartridge.CPUWrite(address, value);
 }

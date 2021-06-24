@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "cartridge.h"
+#include "controller.h"
 
 class CPU;
 class PPU;
@@ -11,7 +12,7 @@ class PPU;
 class Bus
 {
 public:
-	Bus(Cartridge& cart);
+	Bus(Cartridge& cart, Controller& contr);
 
 	uint8_t CPURead(uint16_t address);
 	void CPUWrite(uint16_t address, uint8_t value);
@@ -24,6 +25,7 @@ public:
 
 private:
 	Cartridge& cartridge;
+	Controller& controller;
 	CPU* bus_cpu = nullptr;
 	PPU* bus_ppu = nullptr;
 	std::vector<uint8_t> ram;
