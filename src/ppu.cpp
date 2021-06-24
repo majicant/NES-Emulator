@@ -2,9 +2,9 @@
 
 #include "ppu.h"
 
-PPU::PPU(Bus& bus)
+PPU::PPU(Bus& bus, SDLEngine& engine)
 	: bus(bus)
-	, engine(std::make_unique<SDLEngine>())
+	, engine(engine)
 	, framebuffer(256 * 240 * 3)
 	, primary_oam(256)
 	, secondary_oam(32)
@@ -100,7 +100,7 @@ void PPU::Step()
 		// Vertical blanking
 		PPUSTATUS |= 0x80;
 		nmi_occured = true;
-		engine->UpdateDisplay(framebuffer.data());
+		engine.UpdateDisplay(framebuffer.data());
 	}
 	else if (scanlines == 261) {
 		// Pre-render line

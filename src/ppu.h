@@ -10,7 +10,7 @@
 class PPU
 {
 public:
-	PPU(Bus& bus);
+	PPU(Bus& bus, SDLEngine& engine);
 
 	uint8_t Read(uint16_t address);
 	void Write(uint16_t address, uint8_t value);
@@ -40,7 +40,7 @@ private:
 
 	Bus& bus;
 
-	std::unique_ptr<SDLEngine> engine;
+	SDLEngine& engine;
 	std::vector<uint8_t> framebuffer;
 
 	std::vector<uint8_t> primary_oam;
