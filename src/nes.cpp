@@ -2,9 +2,11 @@
 
 NES::NES(const std::string& filename)
 	: nes_cartridge(std::make_unique<Cartridge>(filename))
-	, nes_bus(std::make_unique<Bus>(*nes_cartridge))
+	, nes_engine(std::make_unique<SDLEngine>())
+	, nes_controller(std::make_unique<Controller>(*nes_engine))
+	, nes_bus(std::make_unique<Bus>(*nes_cartridge, *nes_controller))
 	, nes_cpu(std::make_unique<CPU>(*nes_bus))
-	, nes_ppu(std::make_unique<PPU>(*nes_bus))
+	, nes_ppu(std::make_unique<PPU>(*nes_bus, *nes_engine))
 {
 	nes_bus->ConnectCPU(nes_cpu.get());
 	nes_bus->ConnectPPU(nes_ppu.get());
