@@ -4,6 +4,7 @@
 
 #include "cartridge.h"
 #include "nrom.h"
+#include "uxrom.h"
 
 Cartridge::Cartridge(const std::string& filename)
 {
@@ -26,6 +27,9 @@ Cartridge::Cartridge(const std::string& filename)
 		case 0:
 			mapper = std::make_unique<NROM>(header[4], header[5], header[6] & 0x01);
 			break;
+		case 2:
+			mapper = std::make_unique<UxROM>(header[4], header[5], header[6] & 0x01);
+			break;
 		default:
 			std::cerr << "Unimplemented mapper!" << std::endl;
 			break;
@@ -41,7 +45,7 @@ uint8_t Cartridge::CPURead(uint16_t address)
 
 void Cartridge::CPUWrite(uint16_t address, uint8_t value)
 {
-	prg_data[mapper->MapCPUWrite(address)] = value;
+	mapper->MapCPUWrite(address, value);
 }
 
 uint8_t Cartridge::PPURead(uint16_t address)
