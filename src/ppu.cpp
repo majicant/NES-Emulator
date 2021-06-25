@@ -101,6 +101,7 @@ void PPU::Step()
 		PPUSTATUS |= 0x80;
 		nmi_occured = true;
 		engine.UpdateDisplay(framebuffer.data());
+		engine.UpdateExitFlag();	// Check if the application is being closed once per frame.
 	}
 	else if (scanlines == 261) {
 		// Pre-render line
@@ -274,12 +275,14 @@ void PPU::FetchTileData()
 			}
 			else {
 				if (sprite_regs.attribute_latch[i] & 0x80)	// Flip vertically
-					sprite_row = 15 - sprite_row;
-				tile_address = ((tile_index & 0x01) ? 0x1000 : 0x0000) + ((tile_index & 0xFE) * 16) + sprite_row;
+					sprite_row = 7 - (sprite_row & 0x07);
+				tile_address = ((tile_index & 0x01) ? 0x1000 : 0x0000) + ((tile_index & 0xFE) * 16) + (sprite_row & 0x07);
+				if (sprite_row >= 8)
+					tile_address += 16;
 			}
 
 			sprite_regs.pattern_shift_lo[i] = bus.PPURead(tile_address);
-			sprite_regs.pattern_shift_hi[i] = bus.PPURead(tile_address + sprite_size);
+			sprite_regs.pattern_shift_hi[i] = bus.PPURead(tile_address + 8);
 			sprite_regs.attribute_latch[i] = secondary_oam[4 * i + 2];
 			sprite_regs.x_counters[i] = secondary_oam[4 * i + 3];
 		}
