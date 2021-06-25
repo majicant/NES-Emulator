@@ -5,12 +5,11 @@ NROM::NROM(uint8_t prg_banks, uint8_t chr_banks, uint8_t mirror)
 {
 }
 
-uint16_t NROM::MapCPURead(uint16_t address)
+uint32_t NROM::MapCPURead(uint16_t address)
 {
 	return address & ((prg_banks == 1) ? 0x3FFF : 0x7FFF);
 }
 
-uint16_t NROM::MapCPUWrite(uint16_t address)
+void NROM::MapCPUWrite(uint16_t address, uint8_t value)
 {
-	return address & ((prg_banks == 1) ? 0x3FFF : 0x7FFF);
 }

@@ -1,15 +1,12 @@
 #pragma once
 
-#include <cstdint>
-
 #include "mapper.h"
 
 class NROM : public Mapper
 {
 public:
 	NROM(uint8_t prg_banks, uint8_t chr_banks, uint8_t mirror);
-	~NROM() = default;
 
-	uint16_t MapCPURead(uint16_t address);
-	uint16_t MapCPUWrite(uint16_t address);
+	uint32_t MapCPURead(uint16_t address) override;
+	void MapCPUWrite(uint16_t address, uint8_t value) override;
 };
