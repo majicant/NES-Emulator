@@ -24,4 +24,6 @@ private:
 	std::unique_ptr<Bus> nes_bus;
 	std::unique_ptr<CPU> nes_cpu;
 	std::unique_ptr<PPU> nes_ppu;
+
+	bool exit_flag = false;
 };
