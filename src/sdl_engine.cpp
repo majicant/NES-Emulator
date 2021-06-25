@@ -43,3 +43,15 @@ void SDLEngine::UpdateController(uint8_t& buttons)
 	if (keyboard_state[SDL_SCANCODE_D])	// Right
 		buttons |= 0x80;
 }
+
+void SDLEngine::UpdateExitFlag()
+{
+	SDL_Event e;
+	SDL_PollEvent(&e);
+	exit_flag = (e.type == SDL_QUIT);
+}
+
+bool SDLEngine::GetExitFlag()
+{
+	return exit_flag;
+}
