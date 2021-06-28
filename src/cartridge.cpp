@@ -4,6 +4,7 @@
 
 #include "cartridge.h"
 #include "nrom.h"
+#include "mmc1.h"
 #include "uxrom.h"
 
 Cartridge::Cartridge(const std::string& filename)
@@ -27,6 +28,9 @@ Cartridge::Cartridge(const std::string& filename)
 		case 0:
 			mapper = std::make_unique<NROM>(header[4], header[5], header[6] & 0x01);
 			break;
+		case 1:
+			mapper = std::make_unique<MMC1>(header[4], header[5], header[6] & 0x01);
+			break;
 		case 2:
 			mapper = std::make_unique<UxROM>(header[4], header[5], header[6] & 0x01);
 			break;
@@ -40,22 +44,29 @@ Cartridge::Cartridge(const std::string& filename)
 
 uint8_t Cartridge::CPURead(uint16_t address)
 {
-	return prg_data[mapper->MapCPURead(address)];
+	if (address >= 0x6000 && address <= 0x7FFF)
+		return mapper->ReadPRGRAM(address);
+	else
+		return prg_data[mapper->MapCPURead(address)];
 }
 
 void Cartridge::CPUWrite(uint16_t address, uint8_t value)
 {
-	mapper->MapCPUWrite(address, value);
+	if (address >= 0x6000 && address <= 0x7FFF)
+		mapper->WritePRGRAM(address, value);
+	else
+		mapper->MapCPUWrite(address, value);
 }
 
 uint8_t Cartridge::PPURead(uint16_t address)
 {
-	return chr_data[address];
+	return chr_data[mapper->MapPPURead(address)];
 }
 
 void Cartridge::PPUWrite(uint16_t address, uint8_t value)
 {
-	chr_data[address] = value;
+	if (mapper->HasCHRRam())
+		chr_data[address] = value;
 }
 
 Mapper* Cartridge::GetMapper()
