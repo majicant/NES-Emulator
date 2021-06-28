@@ -163,9 +163,10 @@ void CPU::WriteWord(uint16_t address, uint16_t value)
 
 unsigned CPU::ADC()
 {
-	uint16_t result = A + GetOperandData() + IsSet(SRFlag::C);
+	uint8_t op_data = GetOperandData();
+	uint16_t result = A + op_data + IsSet(SRFlag::C);
 	SetSRFlag(SRFlag::C, result >> 8);
-	SetSRFlag(SRFlag::V, (~(A ^ GetOperandData()) & (A ^ result) & 0x80));
+	SetSRFlag(SRFlag::V, (~(A ^ op_data) & (A ^ result) & 0x80));
 	A = result & 0x00FF;
 	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
@@ -220,9 +221,10 @@ unsigned CPU::BEQ()
 
 unsigned CPU::BIT()
 {
-	SetSRFlag(SRFlag::Z, (A & GetOperandData()) == 0);
-	SetSRFlag(SRFlag::V, GetOperandData() & 0x40);
-	SetSRFlag(SRFlag::N, GetOperandData() & 0x80);
+	uint8_t op_data = GetOperandData();
+	SetSRFlag(SRFlag::Z, (A & op_data) == 0);
+	SetSRFlag(SRFlag::V, op_data & 0x40);
+	SetSRFlag(SRFlag::N, op_data & 0x80);
 	return 0;
 }
 
@@ -309,27 +311,30 @@ unsigned CPU::CLV()
 
 unsigned CPU::CMP()
 {
-	uint8_t result = A - GetOperandData();
-	SetSRFlag(SRFlag::C, A >= GetOperandData());
-	SetSRFlag(SRFlag::Z, A == GetOperandData());
+	uint8_t op_data = GetOperandData();
+	uint8_t result = A - op_data;
+	SetSRFlag(SRFlag::C, A >= op_data);
+	SetSRFlag(SRFlag::Z, A == op_data);
 	SetSRFlag(SRFlag::N, result & 0x80);
 	return page_cross ? 1 : 0;
 }
 
 unsigned CPU::CPX()
 {
-	uint8_t result = X - GetOperandData();
-	SetSRFlag(SRFlag::C, X >= GetOperandData());
-	SetSRFlag(SRFlag::Z, X == GetOperandData());
+	uint8_t op_data = GetOperandData();
+	uint8_t result = X - op_data;
+	SetSRFlag(SRFlag::C, X >= op_data);
+	SetSRFlag(SRFlag::Z, X == op_data);
 	SetSRFlag(SRFlag::N, result & 0x80);
 	return 0;
 }
 
 unsigned CPU::CPY()
 {
-	uint8_t result = Y - GetOperandData();
-	SetSRFlag(SRFlag::C, Y >= GetOperandData());
-	SetSRFlag(SRFlag::Z, Y == GetOperandData());
+	uint8_t op_data = GetOperandData();
+	uint8_t result = Y - op_data;
+	SetSRFlag(SRFlag::C, Y >= op_data);
+	SetSRFlag(SRFlag::Z, Y == op_data);
 	SetSRFlag(SRFlag::N, result & 0x80);
 	return 0;
 }
@@ -539,9 +544,10 @@ unsigned CPU::RTS()
 
 unsigned CPU::SBC()
 {
-	uint16_t result = A + ~GetOperandData() + IsSet(SRFlag::C);
+	uint8_t op_data = GetOperandData();
+	uint16_t result = A + ~op_data + IsSet(SRFlag::C);
 	SetSRFlag(SRFlag::C, (result >> 8) == 0);
-	SetSRFlag(SRFlag::V, (~(A ^ ~GetOperandData()) & (A ^ result) & 0x80));
+	SetSRFlag(SRFlag::V, (~(A ^ ~op_data) & (A ^ result) & 0x80));
 	A = result & 0x00FF;
 	SetSRFlag(SRFlag::Z, A == 0);
 	SetSRFlag(SRFlag::N, A & 0x80);
