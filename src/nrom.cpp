@@ -9,7 +9,3 @@ uint32_t NROM::MapCPURead(uint16_t address)
 {
 	return address & ((prg_banks == 1) ? 0x3FFF : 0x7FFF);
 }
-
-void NROM::MapCPUWrite(uint16_t address, uint8_t value)
-{
-}
