@@ -187,8 +187,8 @@ unsigned CPU::ASL()
 	SetSRFlag(SRFlag::C, op_data & 0x80);
 	op_data <<= 1;
 	SetSRFlag(SRFlag::N, op_data & 0x80);
+	SetSRFlag(SRFlag::Z, op_data == 0);
 	SetOperandData(op_data);
-	SetSRFlag(SRFlag::Z, A == 0);
 	return 0;
 }
 
@@ -258,7 +258,7 @@ unsigned CPU::BPL()
 unsigned CPU::BRK()
 {
 	SP--;
-	WriteWord(0x100 + SP, PC);
+	WriteWord(0x100 + SP, PC + 1);
 	SP--;
 	bus.CPUWrite(0x100 + SP, SR | 0x30);
 	SP--;
@@ -503,8 +503,8 @@ unsigned CPU::ROL()
 		op_data |= 0x01;
 	SetSRFlag(SRFlag::C, new_carry);
 	SetSRFlag(SRFlag::N, op_data & 0x80);
+	SetSRFlag(SRFlag::Z, op_data == 0);
 	SetOperandData(op_data);
-	SetSRFlag(SRFlag::Z, A == 0);
 	return 0;
 }
 
@@ -517,8 +517,8 @@ unsigned CPU::ROR()
 		op_data |= 0x80;
 	SetSRFlag(SRFlag::C, new_carry);
 	SetSRFlag(SRFlag::N, op_data & 0x80);
+	SetSRFlag(SRFlag::Z, op_data == 0);
 	SetOperandData(op_data);
-	SetSRFlag(SRFlag::Z, A == 0);
 	return 0;
 }
 
