@@ -1,7 +1,7 @@
 #pragma once
 
+#include <filesystem>
 #include <memory>
-#include <string>
 
 #include "bus.h"
 #include "cartridge.h"
@@ -13,7 +13,7 @@
 class NES
 {
 public:
-	NES(const std::string& filename);
+	NES(const std::filesystem::path& filename);
 	
 	void Run();
 

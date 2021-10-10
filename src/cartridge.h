@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "mapper.h"
@@ -10,7 +10,7 @@
 class Cartridge
 {
 public:
-	Cartridge(const std::string& filename);
+	Cartridge(const std::filesystem::path& filename);
 
 	uint8_t CPURead(uint16_t address);
 	void CPUWrite(uint16_t address, uint8_t value);
