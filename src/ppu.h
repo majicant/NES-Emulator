@@ -76,8 +76,7 @@ private:
 
 	uint8_t internal_data_buffer = 0x00;
 
-	bool nmi_occured = false;
-	bool nmi_output = false;
+	bool nmi = false;
 
 	unsigned cycles = 0;
 	unsigned scanlines = 0;

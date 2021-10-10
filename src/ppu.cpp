@@ -43,7 +43,6 @@ void PPU::Write(uint16_t address, uint8_t value)
 	switch (address) {
 	case 0:		// PPUCTRL
 		PPUCTRL = value;
-		nmi_output = PPUCTRL & 0x80;
 		bg_regs.t_addr = (bg_regs.t_addr & 0xF3FF) | ((value & 0x03) << 10);
 		break;
 	case 1:		// PPUMASK
@@ -82,9 +81,11 @@ void PPU::Write(uint16_t address, uint8_t value)
 
 bool PPU::CheckNMI()
 {
-	bool trigger_nmi = (nmi_output && nmi_occured);
-	nmi_occured = false;
-	return trigger_nmi;
+	if (nmi) {
+		nmi = false;
+		return true;
+	}
+	return false;
 }
 
 void PPU::Step()
@@ -99,7 +100,8 @@ void PPU::Step()
 	else if (scanlines == 241 && cycles == 1) {
 		// Vertical blanking
 		PPUSTATUS |= 0x80;
-		nmi_occured = true;
+		if (PPUCTRL & 0x80)
+			nmi = true;
 		engine.UpdateDisplay(framebuffer.data());
 		engine.UpdateExitFlag();	// Check if the application is being closed once per frame.
 	}
@@ -107,10 +109,8 @@ void PPU::Step()
 		// Pre-render line
 		FetchBackground();
 		FetchTileData();
-		if (cycles == 1) {
+		if (cycles == 1)
 			PPUSTATUS &= 0x1F;
-			nmi_occured = false;
-		}
 	}
 	cycles++;
 	if (cycles == 341) {
@@ -267,18 +267,22 @@ void PPU::FetchTileData()
 			uint8_t sprite_row = scanlines - secondary_oam[4 * i];
 			uint8_t tile_index = secondary_oam[4 * i + 1];
 
-			uint16_t tile_address;
+			uint16_t tile_address = 0;
 			if (sprite_size == 8) {
 				if (sprite_regs.attribute_latch[i] & 0x80)	// Flip vertically
 					sprite_row = 7 - sprite_row;
 				tile_address = ((PPUCTRL & 0x08) ? 0x1000 : 0x0000) + (tile_index * 16) + sprite_row;
 			}
 			else {
-				if (sprite_regs.attribute_latch[i] & 0x80)	// Flip vertically
+				if (sprite_regs.attribute_latch[i] & 0x80) {	// Flip vertically
+					if (sprite_row <= 7)
+						tile_address = 16;
 					sprite_row = 7 - (sprite_row & 0x07);
-				tile_address = ((tile_index & 0x01) ? 0x1000 : 0x0000) + ((tile_index & 0xFE) * 16) + (sprite_row & 0x07);
-				if (sprite_row >= 8)
-					tile_address += 16;
+				}
+				else
+					if (sprite_row >= 8)
+						tile_address = 16;
+				tile_address += ((tile_index & 0x01) ? 0x1000 : 0x0000) + ((tile_index & 0xFE) * 16) + (sprite_row & 0x07);
 			}
 
 			sprite_regs.pattern_shift_lo[i] = bus.PPURead(tile_address);
@@ -292,7 +296,7 @@ void PPU::FetchTileData()
 bool PPU::SpriteZeroHitIsPossible()
 {
 	bool rendering_enabled = ((PPUMASK & 0x18) == 0x18);
-	bool show_leftside_sprites = ((cycles >= 9) && ((PPUMASK & 0x06) == 0x06));
+	bool show_leftside_sprites = ((cycles >= 9) || ((PPUMASK & 0x06) == 0x06));
 	bool not_last_cycle = (cycles != 256);
 	bool szh_not_detected = ((PPUSTATUS & 0x40) == 0);
 	return sprite_regs.sprite_zero_found && rendering_enabled && show_leftside_sprites && not_last_cycle && szh_not_detected;
@@ -300,41 +304,50 @@ bool PPU::SpriteZeroHitIsPossible()
 
 void PPU::UpdateFramebuffer()
 {
+	uint8_t pixel = 0;
+	uint8_t palette = 0;
+
 	// Background pixel
-	uint8_t pat_lo = (bg_regs.pattern_shift[0] & (0x8000 >> bg_regs.fine_x)) > 0;
-	uint8_t pat_hi = (bg_regs.pattern_shift[1] & (0x8000 >> bg_regs.fine_x)) > 0;
+	// Render background if background rendering is enabled
+	if (PPUMASK & 0x08) {
+		uint8_t pat_lo = (bg_regs.pattern_shift[0] & (0x8000 >> bg_regs.fine_x)) > 0;
+		uint8_t pat_hi = (bg_regs.pattern_shift[1] & (0x8000 >> bg_regs.fine_x)) > 0;
 
-	uint8_t pixel = (pat_hi << 1) | pat_lo;
+		pixel = (pat_hi << 1) | pat_lo;
 
-	uint8_t pal_lo = (bg_regs.palette_shift[0] & (0x80 >> bg_regs.fine_x)) > 0;
-	uint8_t pal_hi = (bg_regs.palette_shift[1] & (0x80 >> bg_regs.fine_x)) > 0;
+		uint8_t pal_lo = (bg_regs.palette_shift[0] & (0x80 >> bg_regs.fine_x)) > 0;
+		uint8_t pal_hi = (bg_regs.palette_shift[1] & (0x80 >> bg_regs.fine_x)) > 0;
 
-	uint8_t palette = ((pal_hi << 1) | pal_lo) << 2;
-	if (pixel == 0)
-		palette = 0;
+		palette = ((pal_hi << 1) | pal_lo) << 2;
+		if (pixel == 0)
+			palette = 0;
+	}
 
 	// Sprite pixel
-	for (int i = 0; i < sprite_regs.sprites_found; i++) {
-		if (sprite_regs.x_counters[i] == 0) {
-			uint8_t bit_select = (sprite_regs.attribute_latch[i] & 0x40) ? 0x01 : 0x80;	// Flip horizontally
-			uint8_t sprite_pat_lo = (sprite_regs.pattern_shift_lo[i] & bit_select) > 0;
-			uint8_t sprite_pat_hi = (sprite_regs.pattern_shift_hi[i] & bit_select) > 0;
+	// Render sprite if sprite rendering is enabled
+	if (PPUMASK & 0x10) {
+		for (int i = 0; i < sprite_regs.sprites_found; i++) {
+			if (sprite_regs.x_counters[i] == 0) {
+				uint8_t bit_select = (sprite_regs.attribute_latch[i] & 0x40) ? 0x01 : 0x80;	// Flip horizontally
+				uint8_t sprite_pat_lo = (sprite_regs.pattern_shift_lo[i] & bit_select) > 0;
+				uint8_t sprite_pat_hi = (sprite_regs.pattern_shift_hi[i] & bit_select) > 0;
 
-			uint8_t sprite_pixel = (sprite_pat_hi << 1) | sprite_pat_lo;
-			uint8_t sprite_palette = ((sprite_regs.attribute_latch[i] & 0x03) + 0x04) << 2;
+				uint8_t sprite_pixel = (sprite_pat_hi << 1) | sprite_pat_lo;
+				uint8_t sprite_palette = ((sprite_regs.attribute_latch[i] & 0x03) + 0x04) << 2;
 
-			if (pixel == 0 && sprite_pixel > 0) {
-				pixel = sprite_pixel;
-				palette = sprite_palette;
-				break;
-			}
-			else if (pixel > 0 && sprite_pixel > 0) {
-				if (i == 0 && SpriteZeroHitIsPossible())	// Sprite zero hit
-					PPUSTATUS |= 0x40;
-				if ((sprite_regs.attribute_latch[i] & 0x20) == 0) {
+				if (pixel == 0 && sprite_pixel > 0) {
 					pixel = sprite_pixel;
 					palette = sprite_palette;
 					break;
+				}
+				else if (pixel > 0 && sprite_pixel > 0) {
+					if (i == 0 && SpriteZeroHitIsPossible())	// Sprite zero hit
+						PPUSTATUS |= 0x40;
+					if ((sprite_regs.attribute_latch[i] & 0x20) == 0) {
+						pixel = sprite_pixel;
+						palette = sprite_palette;
+						break;
+					}
 				}
 			}
 		}
