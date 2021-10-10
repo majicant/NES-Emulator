@@ -357,14 +357,15 @@ void PPU::UpdateFramebuffer()
 					if ((sprite_regs.attribute_latch[i] & 0x20) == 0) {
 						pixel = sprite_pixel;
 						palette = sprite_palette;
-						break;
 					}
+					break;
 				}
 			}
 		}
 	}
-
-	framebuffer[scanlines * 256 * 3 + (cycles - 1) * 3] = palettes[bus.PPURead(0x3F00 + palette + pixel)][0];
-	framebuffer[scanlines * 256 * 3 + ((cycles - 1) * 3) + 1] = palettes[bus.PPURead(0x3F00 + palette + pixel)][1];
-	framebuffer[scanlines * 256 * 3 + ((cycles - 1) * 3) + 2] = palettes[bus.PPURead(0x3F00 + palette + pixel)][2];
+	auto colour = palettes[bus.PPURead(0x3F00 + palette + pixel)];
+	int index = scanlines * 256 * 3 + (cycles - 1) * 3;
+	framebuffer[index] = colour[0];
+	framebuffer[index + 1] = colour[1];
+	framebuffer[index + 2] = colour[2];
 }
