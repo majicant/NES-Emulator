@@ -12,7 +12,7 @@ uint32_t MMC1::MapCPURead(uint16_t address)
 	case 0:
 	case 1:
 		// switch 32 KB at $8000, ignoring low bit of bank number
-		return ((internal_regs.prg_bank & 0x0E) * 0x4000) + (address & 0x7FFF);
+		return (((internal_regs.prg_bank & 0x0E) >> 1) * 0x8000) + (address & 0x7FFF);
 	case 2:
 		// fix first bank at $8000 and switch 16 KB bank at $C000
 		if (address >= 0x8000 && address <= 0xBFFF)
@@ -57,10 +57,8 @@ uint32_t MMC1::MapPPURead(uint16_t address)
 	}
 	else {
 		// switch 8 KB at a time
-		if (address >= 0x0000 && address <= 0x0FFF)
-			return ((internal_regs.chr_bank0 & 0x1E) * 0x1000) + (address & 0x1FFF);
+		return (((internal_regs.chr_bank0 & 0x1E) >> 1) * 0x2000) + (address & 0x1FFF);
 	}
-	return address;
 }
 
 uint8_t MMC1::ReadPRGRAM(uint16_t address)
