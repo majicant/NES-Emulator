@@ -16,7 +16,10 @@ void NES::Run()
 {
 	unsigned ppu_cycles;
 	while (!nes_engine->GetExitFlag()) {
-		ppu_cycles = nes_ppu->CheckNMI() ? nes_cpu->HandleNMI() : nes_cpu->CheckOAMDMA() ? nes_cpu->HandleOAMDMA() : nes_cpu->ExecuteInstruction();
+		ppu_cycles = nes_ppu->CheckNMI() ? nes_cpu->HandleNMI() : 
+			nes_ppu->CheckIRQ() ? nes_cpu->HandleIRQ() :
+			nes_cpu->CheckOAMDMA() ? nes_cpu->HandleOAMDMA() : 
+			nes_cpu->ExecuteInstruction();
 		for (unsigned i = 0; i < ppu_cycles * 3; i++)
 			nes_ppu->Step();
 	}

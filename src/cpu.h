@@ -13,6 +13,7 @@ public:
 
 	unsigned ExecuteInstruction();
 	unsigned HandleNMI();
+	unsigned HandleIRQ();
 
 	bool CheckOAMDMA();
 	void TriggerOAMDMA(uint8_t page_num);

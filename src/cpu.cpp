@@ -28,6 +28,19 @@ unsigned CPU::HandleNMI()
 	return 7;
 }
 
+unsigned CPU::HandleIRQ()
+{
+	SP--;
+	WriteWord(0x100 + SP, PC);
+	SP--;
+	bus.CPUWrite(0x100 + SP, (SR | 0x20) & 0xEF);
+	SP--;
+	PC = ReadWord(0xFFFE);
+	SetSRFlag(SRFlag::I, true);
+	total_cycles += 7;
+	return 7;
+}
+
 bool CPU::CheckOAMDMA()
 {
 	return oamdma_enable;
