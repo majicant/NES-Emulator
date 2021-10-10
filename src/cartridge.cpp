@@ -7,7 +7,7 @@
 #include "mmc1.h"
 #include "uxrom.h"
 
-Cartridge::Cartridge(const std::string& filename)
+Cartridge::Cartridge(const std::filesystem::path& filename)
 {
 	std::ifstream rom(filename, std::ifstream::binary);
 	if (rom.is_open()) {
@@ -66,7 +66,7 @@ uint8_t Cartridge::PPURead(uint16_t address)
 void Cartridge::PPUWrite(uint16_t address, uint8_t value)
 {
 	if (mapper->HasCHRRam())
-		chr_data[address] = value;
+		chr_data[mapper->MapPPURead(address)] = value;
 }
 
 Mapper* Cartridge::GetMapper()
