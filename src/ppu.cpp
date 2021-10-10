@@ -88,6 +88,15 @@ bool PPU::CheckNMI()
 	return false;
 }
 
+bool PPU::CheckIRQ()
+{
+	if (irq) {
+		irq = false;
+		return true;
+	}
+	return false;
+}
+
 void PPU::Step()
 {
 	if (scanlines >= 0 && scanlines <= 239) {
@@ -96,6 +105,8 @@ void PPU::Step()
 		FetchSprites();
 		if (cycles >= 1 && cycles <= 256)
 			UpdateFramebuffer();
+		if ((cycles == 260) && ((PPUMASK & 0x08) || (PPUMASK & 0x10)) && bus.GetIRQ())
+			irq = true;
 	}
 	else if (scanlines == 241 && cycles == 1) {
 		// Vertical blanking

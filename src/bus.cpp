@@ -105,6 +105,11 @@ void Bus::PPUWrite(uint16_t address, uint8_t value)
 	}
 }
 
+bool Bus::GetIRQ()
+{
+	return cartridge.GetMapper()->IRQ();
+}
+
 void Bus::ConnectCPU(CPU* cpu_ptr)
 {
 	bus_cpu = cpu_ptr;

@@ -15,6 +15,7 @@ public:
 	uint8_t Read(uint16_t address);
 	void Write(uint16_t address, uint8_t value);
 	bool CheckNMI();
+	bool CheckIRQ();
 
 	void Step();
 
@@ -77,6 +78,7 @@ private:
 	uint8_t internal_data_buffer = 0x00;
 
 	bool nmi = false;
+	bool irq = false;
 
 	unsigned cycles = 0;
 	unsigned scanlines = 0;

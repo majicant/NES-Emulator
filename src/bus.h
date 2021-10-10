@@ -20,6 +20,8 @@ public:
 	uint8_t PPURead(uint16_t address);
 	void PPUWrite(uint16_t address, uint8_t value);
 
+	bool GetIRQ();
+
 	void ConnectCPU(CPU* cpu_ptr);
 	void ConnectPPU(PPU* ppu_ptr);
 

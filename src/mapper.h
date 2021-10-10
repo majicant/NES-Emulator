@@ -25,8 +25,10 @@ public:
 	virtual uint8_t ReadPRGRAM(uint16_t address) { return 0x00; }
 	virtual void WritePRGRAM(uint16_t address, uint8_t value) {}
 
-	inline virtual Mirror GetMirror() { return mirror; }
-	inline virtual bool HasCHRRam() { return chr_banks == 0; }
+	virtual Mirror GetMirror() { return mirror; }
+	virtual bool HasCHRRam() { return chr_banks == 0; }
+
+	virtual bool IRQ() { return false; }
 
 protected:
 	uint8_t prg_banks;
