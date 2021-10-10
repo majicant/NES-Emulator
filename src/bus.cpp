@@ -56,7 +56,7 @@ uint8_t Bus::PPURead(uint16_t address)
 			return vram[(address <= 0x07FF) ? (address & 0x03FF) : ((address & 0x03FF) + 0x0400)];
 		}
 	}
-	else if (address >= 0x3F00 && address <= 0x3FFF)
+	else if (address >= 0x3F00 && address <= 0x3FFF) {
 		switch (address & 0x00FF) {
 		case 0x10:
 		case 0x14:
@@ -66,6 +66,7 @@ uint8_t Bus::PPURead(uint16_t address)
 			break;
 		}
 		return palette_ram[address & 0x001F];
+	}
 	return 0x00;
 }
 
