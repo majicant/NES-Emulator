@@ -1,6 +1,6 @@
 #include "ppu.h"
 
-const std::vector<std::vector<uint8_t>> PPU::palettes =
+const std::vector<std::array<uint8_t, 3>> PPU::palettes =
 {
 	{ 0x66, 0x66, 0x66 }, // 0x00
 	{ 0x00, 0x2A, 0x88 }, // 0x01

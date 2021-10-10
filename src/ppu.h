@@ -32,7 +32,7 @@ private:
 
 	void UpdateFramebuffer();
 
-	static const std::vector<std::vector<uint8_t>> palettes;
+	static const std::vector<std::array<uint8_t, 3>> palettes;
 
 	uint8_t PPUCTRL = 0x00;		// $2000
 	uint8_t PPUMASK = 0x00;		// $2001
