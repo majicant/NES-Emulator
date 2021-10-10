@@ -5,6 +5,7 @@
 #include "cartridge.h"
 #include "nrom.h"
 #include "mmc1.h"
+#include "mmc3.h"
 #include "uxrom.h"
 
 Cartridge::Cartridge(const std::filesystem::path& filename)
@@ -33,6 +34,10 @@ Cartridge::Cartridge(const std::filesystem::path& filename)
 			break;
 		case 2:
 			mapper = std::make_unique<UxROM>(header[4], header[5], header[6] & 0x01);
+			break;
+		case 4:
+			// MMC3 uses 8 KB PRG banks instead of 16 KB
+			mapper = std::make_unique<MMC3>(header[4] * 2, header[5], header[6] & 0x01);
 			break;
 		default:
 			std::cerr << "Unimplemented mapper!" << std::endl;
