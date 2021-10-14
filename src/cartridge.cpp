@@ -70,8 +70,7 @@ uint8_t Cartridge::PPURead(uint16_t address)
 
 void Cartridge::PPUWrite(uint16_t address, uint8_t value)
 {
-	if (mapper->HasCHRRam())
-		chr_data[mapper->MapPPURead(address)] = value;
+	chr_data[mapper->MapPPURead(address)] = value;
 }
 
 Mapper* Cartridge::GetMapper()

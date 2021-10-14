@@ -26,8 +26,6 @@ public:
 	virtual void WritePRGRAM(uint16_t address, uint8_t value) {}
 
 	virtual Mirror GetMirror() { return mirror; }
-	virtual bool HasCHRRam() { return chr_banks == 0; }
-
 	virtual bool IRQ() { return false; }
 
 protected:
