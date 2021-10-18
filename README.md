@@ -6,6 +6,9 @@ supports the following mappers for games:
 * UxROM
 * MMC3
 
+Note that the emulator is synced to the monitors refresh rate and thus requires a 60hz display for games
+to run at a normal speed.
+
 ## Screenshots
 <img src="https://github.com/majicant/NES-Emulator/blob/master/screenshots/donkey%20kong.png" width="400"> <img src="https://github.com/majicant/NES-Emulator/blob/master/screenshots/ice%20climber.png" width="400">
 
@@ -18,7 +21,10 @@ supports the following mappers for games:
 <img src="https://github.com/majicant/NES-Emulator/blob/master/screenshots/zelda%202.png" width="400"> <img src="https://github.com/majicant/NES-Emulator/blob/master/screenshots/zelda.png" width="400">
 
 ## Usage
-Change the current working directory to the location of the executable. Then execute
+1. Run ```git clone https://github.com/majicant/NES-Emulator```
+2. Open the project in Visual Studio and build in Release for x86.
+3. Move the dll in ```ext/SDL2/lib/x86``` into ```bin/Win32/Release```
+4. Change the current working directory to the location of the executable. Then execute
 ```
 > "NES Emulator" "C:/.../game.nes"
 ```
