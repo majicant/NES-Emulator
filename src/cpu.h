@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -68,7 +69,7 @@ private:
 	struct Instruction
 	{
 		std::string name;
-		unsigned (CPU::*instruction)(void);
+		std::function<unsigned(CPU*)> instruction;
 		AddressingMode address_mode;
 		unsigned cycles;
 	};

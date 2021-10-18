@@ -10,7 +10,7 @@ unsigned CPU::ExecuteInstruction()
 {
 	uint8_t opcode = FetchOpcode();
 	SetOperand(instruction_table[opcode].address_mode);
-	unsigned cycles = (this->*instruction_table[opcode].instruction)() + instruction_table[opcode].cycles;
+	unsigned cycles = std::invoke(instruction_table[opcode].instruction, this) + instruction_table[opcode].cycles;
 	total_cycles += cycles;
 	return cycles;
 }
